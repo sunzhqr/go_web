@@ -34,13 +34,13 @@ type Badge struct {
 	Db       string `json:"db"`
 }
 
-type User struct {
+type UserD struct {
 	Id   int    `json:"identification"`
 	Name string `json:"username"`
 }
 
 func mainer() {
-	user1 := User{10, "Sanzhar"}
+	user1 := UserD{10, "Sanzhar"}
 	output, _ := json.MarshalIndent(user1, "", "    ")
 	fmt.Println(string(output))
 
