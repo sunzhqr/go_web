@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	is "github.com/go-ozzo/ozzo-validation/v4/is"
 )
 
 type Result struct {
@@ -14,8 +17,21 @@ type Result struct {
 
 type User struct {
 	Id       uint   `json:"id"`
+	FullName string `json:"full_name"`
 	Grade    string `json:"grade"`
 	Language string `json:"lang"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+}
+
+func (u User) Validate() error {
+	return validation.ValidateStruct(&u,
+		validation.Field(&u.Id, validation.Required),
+		validation.Field(&u.FullName, validation.Required, is.Alpha),
+		validation.Field(&u.Grade, validation.Required, validation.NotNil, is.Alpha),
+		validation.Field(&u.Email, validation.Required, validation.NotNil, is.Email),
+		validation.Field(&u.Phone, validation.Required, is.E164),
+	)
 }
 
 func main() {
@@ -58,11 +74,21 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	var user User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		fmt.Println("ERROR:", err.Error())
+		fmt.Println("Decoding Error:", err.Error())
 		WriteJson(w, http.StatusInternalServerError, map[string]interface{}{
 			"ok":    false,
 			"error": "Internal Server Error",
 		})
+		return
+	}
+	err = user.Validate()
+	if err != nil {
+		WriteJson(w, http.StatusBadRequest, map[string]interface{}{
+			"ok":    false,
+			"error": "Bad Request",
+		})
+		fmt.Fprintln(w, "Validation Error:", err.Error())
+		fmt.Println("Validation Error:", err.Error())
 		return
 	}
 	fmt.Printf("data from request %v\n", user)
