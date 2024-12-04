@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -13,28 +12,29 @@ type Result struct {
 }
 
 func main() {
-	http.HandleFunc("/json", jsonResult)
+	http.HandleFunc("/json", UserHandler)
 	err := http.ListenAndServe(":3000", nil)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func jsonResult(w http.ResponseWriter, r *http.Request) {
+func WriteJson(w http.ResponseWriter, status int, v interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(v)
+}
+
+func UserHandler(w http.ResponseWriter, r *http.Request) {
 	result := Result{
-		1, 19, "Sanzhar Myrzash",
+		100, 19, "Golang FastAPI",
 	}
-	response, err := json.Marshal(result)
-	// err = errors.New("test error")
+	err := WriteJson(w, http.StatusOK, result)
+	// err = errors.New("test")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		resultError := map[string]any{
+		WriteJson(w, http.StatusInternalServerError, map[string]interface{}{
 			"ok":           false,
 			"errorMessage": err.Error(),
-		}
-		json.NewEncoder(w).Encode(resultError)
+		})
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintln(w, string(response))
 }
